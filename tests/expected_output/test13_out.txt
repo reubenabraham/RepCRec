@@ -1,0 +1,19 @@
+Getting input from /Users/reubenabraham/PycharmProjects/RepCRec/tests/test_13.txt...
+----- Timestamp: 0 -----
+T1 begins
+----- Timestamp: 1 -----
+T2 begins
+----- Timestamp: 2 -----
+T3 begins
+----- Timestamp: 3 -----
+T3 writes x2 with value 10 to sites [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+----- Timestamp: 4 -----
+----- Timestamp: 5 -----
+----- Timestamp: 6 -----
+T3 commits!
+T2 writes x2 with value 10 to sites [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+----- Timestamp: 7 -----
+T2 commits!
+T1 writes x2 with value 10 to sites [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+----- Timestamp: 8 -----
+T1 commits!

@@ -12,19 +12,17 @@ begin(T5)
 R(T3,x3)
 fail(4)
 recover(4)
-R(T4,x4) // This reads from a site other than site 4,
-         // because site 4 doesn't have an updated copy of
-         // replicated variable x4
+R(T4,x4) // This reads from a site other than site 4, because site 4 doesn't have an updated copy of replicated variable x4
 R(T5,x5)
 R(T1,x6)
 R(T2,x2)
-W(T1,x2,10)
-W(T2,x3,20)
-W(T3,x4,30)
-W(T5,x1,50)
+W(T1,x2,10) // T1 -> T2
+W(T2,x3,20) // here, T2 gets the write lock on x3 because all locks were erased when site 4 went down
+W(T3,x4,30) // T3 -> T4
+W(T5,x1,50) // T5 gets W lock on x1 no problem
 end(T5)
 W(T4,x5,40)
-end(T4)
+end(T4) // Now T3 can write
 end(T3)
-end(T2)
+end(T2) // Now T1 can write
 end(T1)

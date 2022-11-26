@@ -1,0 +1,17 @@
+Getting input from /Users/reubenabraham/PycharmProjects/RepCRec/tests/test_7.txt...
+----- Timestamp: 0 -----
+T1 begins
+----- Timestamp: 1 -----
+T2 begins and is read-only
+----- Timestamp: 2 -----
+T2 (RO) reads x1.2: 10
+----- Timestamp: 3 -----
+T2 (RO) reads x2.1: 20
+----- Timestamp: 4 -----
+T1 writes x3 with value 33 to sites [4]
+----- Timestamp: 5 -----
+T1 commits!
+----- Timestamp: 6 -----
+T2 (RO) reads x3.4: 30
+----- Timestamp: 7 -----
+T2 commits!
