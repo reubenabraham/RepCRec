@@ -1,4 +1,4 @@
-class Read:
+class Read_IO:
     def __init__(self, transaction: str, variable: str):
         self.transaction = transaction
         self.variable = variable
@@ -7,7 +7,7 @@ class Read:
         return "R("+self.transaction+","+self.variable+")"
 
 
-class Write:
+class Write_IO:
     def __init__(self, transaction: str, variable: str, new_value: str):
         self.transaction = transaction
         self.variable = variable
@@ -17,7 +17,7 @@ class Write:
         return "W(" + self.transaction + "," + self.variable + "," + self.new_value + ")"
 
 
-class Begin:
+class Begin_IO:
     def __init__(self, transaction: str):
         self.transaction = transaction
 
@@ -25,15 +25,15 @@ class Begin:
         return "begin(" + self.transaction + ")"
 
 
-class BeginRO(Begin):
+class BeginRO_IO(Begin_IO):
     def __init__(self, transaction: str):
-        Begin.__init__(self, transaction)
+        Begin_IO.__init__(self, transaction)
 
     def __repr__(self):
         return "beginRO(" + self.transaction + ")"
 
 
-class Fail:
+class Fail_IO:
     def __init__(self, site: str):
         self.site = site
 
@@ -41,7 +41,7 @@ class Fail:
         return "fail(" + self.site + ")"
 
 
-class Recover:
+class Recover_IO:
     def __init__(self, site: str):
         self.site = site
 
@@ -49,7 +49,7 @@ class Recover:
         return "recover(" + self.site + ")"
 
 
-class End:
+class End_IO:
     def __init__(self, transaction: str):
         self.transaction = transaction
 
@@ -57,7 +57,7 @@ class End:
         return "end(" + self.transaction + ")"
 
 
-class Dump:
+class Dump_IO:
     def __repr__(self):
         return "dump"
 
