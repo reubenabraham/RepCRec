@@ -44,9 +44,9 @@ class InputProcessor:
         if len(tup) != expected_size:
             raise Exception(f"Invalid input at line {line_count}: {line}")
 
-    def create_event_queue(self):
+    def create_instruction_queue(self):
 
-        event_queue = deque()
+        instruction_queue = deque()
 
         with open(self.file_path) as fp:
             lines = fp.readlines()
@@ -65,55 +65,55 @@ class InputProcessor:
                     self.validate_tuple_length(r, 2, line_count, line)
                     transaction, variable = r
                     read_obj = Read_IO(transaction, variable)
-                    event_queue.append((READ, read_obj))
+                    instruction_queue.append((READ, read_obj))
 
                 elif line.startswith('W(') and line.endswith(')'):
                     w = self.unpack_tuple_str(line[1:])
                     self.validate_tuple_length(w, 3, line_count, line)
                     transaction, variable, new_variable_value = w
                     write_obj = Write_IO(transaction, variable, new_variable_value)
-                    event_queue.append((WRITE, write_obj))
+                    instruction_queue.append((WRITE, write_obj))
 
                 elif line.startswith('fail(') and line.endswith(')'):
                     f = self.unpack_tuple_str(line.lstrip('fail'))
                     self.validate_tuple_length(f, 1, line_count, line)
                     fail_site = f[0]
                     fail_obj = Fail_IO(fail_site)
-                    event_queue.append((FAIL, fail_obj))
+                    instruction_queue.append((FAIL, fail_obj))
 
                 elif line.startswith('recover(') and line.endswith(')'):
                     re = self.unpack_tuple_str(line.lstrip('recover'))
                     self.validate_tuple_length(re, 1, line_count, line)
                     recover_site = re[0]
                     recover_obj = Recover_IO(recover_site)
-                    event_queue.append((RECOVER, recover_obj))
+                    instruction_queue.append((RECOVER, recover_obj))
 
                 elif line.startswith('begin(') and line.endswith(')'):
                     b = self.unpack_tuple_str(line.lstrip('begin'))
                     self.validate_tuple_length(b, 1, line_count, line)
                     transaction = b[0]
                     begin_obj = Begin_IO(transaction)
-                    event_queue.append((BEGIN, begin_obj))
+                    instruction_queue.append((BEGIN, begin_obj))
 
                 elif line.startswith('beginRO(') and line.endswith(')'):
                     bro = self.unpack_tuple_str(line.lstrip('beginRO'))
                     self.validate_tuple_length(bro, 1, line_count, line)
                     transaction = bro[0]
                     begin_ro_obj = BeginRO_IO(transaction)
-                    event_queue.append((BEGIN_RO, begin_ro_obj))
+                    instruction_queue.append((BEGIN_RO, begin_ro_obj))
 
                 elif line.startswith('end(') and line.endswith(')'):
                     e = self.unpack_tuple_str(line.lstrip('end'))
                     self.validate_tuple_length(e, 1, line_count, line)
                     transaction = e[0]
                     end_obj = End_IO(transaction)
-                    event_queue.append((END, end_obj))
+                    instruction_queue.append((END, end_obj))
 
                 elif line == "dump()":
                     dump_obj = Dump_IO()
-                    event_queue.append((DUMP, dump_obj))
+                    instruction_queue.append((DUMP, dump_obj))
 
                 else:
                     raise Exception(f"Invalid input at line {line_count}: {line}")
 
-        return event_queue
+        return instruction_queue
