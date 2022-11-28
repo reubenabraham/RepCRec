@@ -15,4 +15,5 @@ if __name__ == "__main__":
 
     tm.simulation(instruction_queue)
     tm.print_transaction_db()
+    tm.print_event_queue()
 
