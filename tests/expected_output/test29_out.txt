@@ -1,0 +1,34 @@
+Getting input from /Users/reubenabraham/PycharmProjects/RepCRec/tests/test_29.txt...
+----- Timestamp: 0 -----
+Site 2 fails
+----- Timestamp: 1 -----
+Site 3 fails
+----- Timestamp: 2 -----
+Site 4 fails
+----- Timestamp: 3 -----
+Site 5 fails
+----- Timestamp: 4 -----
+Site 6 fails
+----- Timestamp: 5 -----
+Site 7 fails
+----- Timestamp: 6 -----
+Site 8 fails
+----- Timestamp: 7 -----
+Site 9 fails
+----- Timestamp: 8 -----
+Site 10 fails
+----- Timestamp: 9 -----
+T1 begins
+----- Timestamp: 10 -----
+T1 writes x2 with value 100 to sites [1]
+----- Timestamp: 11 -----
+T1 commits!
+----- Timestamp: 12 -----
+Site 2 recovers
+----- Timestamp: 13 -----
+Site 1 fails
+----- Timestamp: 14 -----
+T2 begins and is read-only
+----- Timestamp: 15 -----
+----- Timestamp: 16 -----
+T2 commits!

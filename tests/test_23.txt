@@ -1,0 +1,10 @@
+//Reading non replicated variable when the site is down at RO transaction start
+// the read from T2 basically waits for the site to come back up.
+// it also does not hold locks so it can commit fine.
+begin(T1)
+R(T1,x2)
+fail(2) //x1 is contained in site 2
+beginRO(T2)
+R(T2,x1) //does this abort? No - this waits for the site to get back up. it also doesnt hold a read lock so T2 can commit.
+end(T2)
+end(T1)

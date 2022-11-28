@@ -1,0 +1,9 @@
+//When a transaction is reading a duplicated variable, it checks in series
+// for the first available copy
+// so it reads from site 2 here.
+begin(T1)
+fail(1)
+fail(3)
+R(T1,x6)
+end(T1)
+dump()

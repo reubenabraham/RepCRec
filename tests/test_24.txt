@@ -1,0 +1,10 @@
+//Now the site down at transaction start but has recovered by the time read happens.
+// In this case the site is back up so the read for a non-replicated variable happens just fine.
+begin(T1)
+R(T1, x2)
+fail(2) //x1 is contained in site 2
+beginRO(T2)
+recover(2)
+R(T2, x1) //this reads just fine.
+end(T2)
+end(T1)

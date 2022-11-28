@@ -1,7 +1,8 @@
 // Test 2
 // No aborts happens, since read-only transactions use
 // multiversion read protocol.
-
+//T2 doesn't need to accquire locks so T1 gets write lock on x2 no problem
+// everyone commits.
 begin(T1)
 beginRO(T2)
 W(T1,x1,101)

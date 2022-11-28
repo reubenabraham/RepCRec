@@ -1,0 +1,25 @@
+// In this scenario, based on how its implemented, T2 cannot read x2
+// from any valid site because at the time T2(RO) started, all sites are down
+// except 2 and 2 has just recovered and x2 is replicated so we cannot read from it.
+// so here T2 just waits. It is waiting for either a transaction to commit some
+// value to x2 at site 2 or any other site so T2 can read it.
+// T2 can also commit just fine since its not holding a lock on x2
+
+fail(2)
+fail(3)
+fail(4)
+fail(5)
+fail(6)
+fail(7)
+fail(8)
+fail(9)
+fail(10)
+begin(T1)
+W(T1,x2,100)
+end(T1)
+recover(2)
+fail(1)
+beginRO(T2)
+R(T2, x2)
+end(T2)
+

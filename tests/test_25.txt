@@ -1,0 +1,10 @@
+//Reading non replicated variable when the site is down at RO transaction start
+// In this case, the read waits, but the site later comes back up so the read happens then.
+begin(T1)
+R(T1,x2)
+fail(2) //x1 is contained in site 2
+beginRO(T2)
+R(T2,x1) //this waits
+recover(2) //Does T2 read at this point? - Yes it does.
+end(T2)
+end(T1)

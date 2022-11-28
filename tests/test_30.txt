@@ -1,0 +1,26 @@
+//Same as test 29 but :
+// after t2 begins, t3 writes some new values to x2 and commits
+// but at the time of t2's read, only site 2 is up and x2.2's value
+// at the time t2 started was 20 so it reads 20
+
+fail(2)
+fail(3)
+fail(4)
+fail(5)
+fail(6)
+fail(7)
+fail(8)
+fail(9)
+fail(10)
+begin(T1)
+W(T1,x2,100)
+end(T1)
+recover(2)
+fail(1)
+beginRO(T2)
+begin(T3)
+W(T3,x2,200)
+end(T3)
+R(T2, x2)
+end(T2)
+

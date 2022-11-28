@@ -1,0 +1,23 @@
+Getting input from /Users/reubenabraham/PycharmProjects/RepCRec/tests/test_26.txt...
+----- Timestamp: 0 -----
+T1 begins
+----- Timestamp: 1 -----
+T1 reads x2.1: 20
+----- Timestamp: 2 -----
+Site 2 fails
+----- Timestamp: 3 -----
+T2 begins and is read-only
+----- Timestamp: 4 -----
+T3 begins and is read-only
+----- Timestamp: 5 -----
+----- Timestamp: 6 -----
+----- Timestamp: 7 -----
+Site 2 recovers
+T2 (RO) reads x1.2: 10
+T3 (RO) reads x11.2: 110
+----- Timestamp: 8 -----
+T2 commits!
+----- Timestamp: 9 -----
+T3 commits!
+----- Timestamp: 10 -----
+T1 commits!

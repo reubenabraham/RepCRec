@@ -1,0 +1,27 @@
+//Reading non replicated variable when the site is down at RO transaction start
+// In this case, the read waits, but the site later comes back up and both queued reads happen.
+// We also have T4 which tries to read a replicated variable from a site that went down and came back up
+// T4 just waits, and it also allowed to commit.
+begin(T1)
+R(T1,x2)
+begin(T4)
+fail(2) //x1 is contained in site 2
+beginRO(T2)
+beginRO(T3)
+R(T2,x1) //this waits
+R(T3,x11) // this should also wait.
+recover(2) //Do both T2 and T3 read at this point? Yes, both T2 and T3 read at this point.
+end(T2) //These 3 should commit.
+end(T3)
+end(T1)
+fail(1) //Make sure all other sites fail now, so only site 2 is up
+fail(3)
+fail(4)
+fail(5)
+fail(6)
+fail(7)
+fail(8)
+fail(9)
+fail(10)
+R(T4,x4) //Reading this replicated variable should not be allowed - it should just wait cuz T4 cant read it from anywhere else
+end(T4) //This also commits fine.
