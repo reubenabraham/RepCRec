@@ -31,7 +31,7 @@ class DataItem:
         self.can_read = True
 
     def __repr__(self):
-        return self.name+f"= {list(self.committed_values)}"
+        return self.name+f"= {list(self.get_committed_value())}"
 
     def readable(self):
         # Determines if a data item is readable. Replicated variables cannot be read at
@@ -82,10 +82,14 @@ class SiteDataManager:
 
         for var in site_variables_init[self.site_number]:
             data_item_name = "x"+str(var)
-            obj = DataItem(data_item_name, str(var*10))
+            commit_val = DataItemCommitValue(str(var*10), 0)
+            obj = DataItem(data_item_name, commit_val)
+            # DataItem looks like--
+            # self.name:"x3", self.committed_values: [DataItemCommitValue(value="30",commit_timestamp=0)]
             if var % 2 == 0:
                 obj.replicated = True
 
+            # "x3" : DataItem() object as above
             self.data_dict[data_item_name] = obj
 
     def check_membership(self, variable_name):
@@ -126,7 +130,7 @@ class SiteDataManager:
         output_string += self.site_number
         output_string += ": "+f"Status:[{'UP' if self.status else 'DOWN'}]"+" - "
         for data_item in self.data_dict.values():
-            output_string += data_item.name+":"+data_item.committed_value+", "
+            output_string += data_item.name+":"+data_item.get_committed_value()+", "
 
         return output_string[:-2]
 
