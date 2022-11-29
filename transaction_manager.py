@@ -30,9 +30,14 @@ class Transaction:
         else:
             return False
 
+    def get_start_time(self):
+        return self.transaction_start_time
 
     def get_sites_touched(self):
         return self.transaction_accessed
+
+    def add_touched_site(self, site_id):
+        self.transaction_accessed.append(site_id)
 
 
 class Read:
@@ -80,6 +85,170 @@ class TransactionManager:
         # set global time=0
         self.GLOBAL_TIME = 0
 
+    def print_event_queue(self):
+        print(self.event_queue)
+
+    def print_transaction_db(self):
+        print(self.transaction_db)
+
+    def begin(self, obj):
+
+        # Check if the transaction is already in the system
+        if obj.transaction in self.transaction_db:
+            raise Exception(f"Transaction {obj.transaction} already exists")
+        else:
+            # Create and start the transaction
+            transaction_obj = Transaction(obj.transaction, self.GLOBAL_TIME)
+            self.transaction_db[obj.transaction] = transaction_obj
+            print(f"Transaction {obj.transaction} starts")
+
+    def begin_ro(self, obj):
+
+        # Check if the transaction is already in the system
+        if obj.transaction in self.transaction_db:
+            raise Exception(f"Transaction {obj.transaction} already exists")
+        else:
+            # Create and start the transaction
+            transaction_obj = Transaction(obj.transaction, self.GLOBAL_TIME)
+            transaction_obj.set_read_only()
+            self.transaction_db[obj.transaction] = transaction_obj
+            print(f"Transaction {obj.transaction} [Read Only] starts")
+
+    def queue_read(self, obj):
+
+        # Check if the transaction is valid
+        if obj.transaction not in self.transaction_db:
+            raise Exception(f"Invalid Transaction {obj.transaction}")
+
+        # Queue the Read operation
+        read_obj = Read(obj.variable, obj.transaction)
+        self.event_queue.append((READ, read_obj))
+
+    def queue_write(self, obj):
+
+        # Check if the transaction is valid
+        if obj.transaction not in self.transaction_db:
+            raise Exception(f"Invalid Transaction {obj.transaction}")
+
+        write_obj = Write(obj.variable, obj.transaction, obj.new_value)
+        self.event_queue.append((WRITE, write_obj))
+
+    def read(self, obj):
+
+        # Read operation for normal reads. Read object attributees below
+        # self.data_item = variable
+        # self.transaction_name = transaction
+
+        # Check if transaction is valid :
+        if obj.transaction_name not in self.transaction_db:
+            raise Exception(f"Invalid Transaction {obj.transaction_name}")
+
+        # This can be optimised - we dont have to check all sites for the variable - some variable are only in
+        # certain sites
+        for SDM in self.SDMs.values():
+            if SDM.site_status() and SDM.check_membership(obj.data_item):
+
+                # Read from SDM :
+                # response is a namedtuple with fields [success, value]
+                response = SDM.read(obj.transaction_name, obj.data_item)
+                if response.success:
+
+                    # Track that this transaction touched this site.
+                    self.transaction_db[obj.transaction_name].add_touched_site(SDM.site_number)
+                    print(f"{obj.transaction_name} reads {obj.data_item}.{SDM.site_number} : {response.value}")
+                    return True
+
+        # Cant find variable at any site or site containing variable is down
+        return False
+
+    def read_from_snapshot(self, obj):
+
+        # Read operation for Read Only transaction Reads. Read object attributees below
+        # self.data_item = variable
+        # self.transaction_name = transaction
+
+        # Check if transaction is valid :
+        if obj.transaction_name not in self.transaction_db:
+            raise Exception(f"Invalid Transaction {obj.transaction_name}")
+
+        read_only_transaction_start_time = self.transaction_db[obj.transaction_name].get_start_time()
+
+        for SDM in self.SDMs.values():
+            if SDM.site_status() and SDM.check_membership(obj.data_item):
+
+                # Read from SDM :
+                # response is a namedtuple with fields [success, value]
+                # Pass the start time of the transaction to SDM
+                response = SDM.read_snapshot(obj.data_item, read_only_transaction_start_time)
+                if response.success:
+                    print(f"{obj.transaction_name} [Read-Only] reads {obj.data_item}.{SDM.site_number} : {response.value}")
+                    return True
+
+        # Cant find variable at any site or site containing variable is down
+        return False
+
+    def write(self, obj):
+
+        # Write operation for Write transaction. Write object attributees below
+        # self.data_item = variable
+        # self.transaction_name = transaction
+        # self.new_value = new_value
+
+        # Check if transaction is valid.
+        if obj.transaction_name not in self.transaction_db:
+            raise Exception(f"Invalid Transaction {obj.transaction_name}")
+
+        write_site_available, got_all_locks = False, False
+        written_sites = []
+
+        for SDM in self.SDMs.values():
+            if SDM.site_status() and SDM.check_membership(obj.data_item):
+
+                write_site_available = True
+                response = SDM.write_lock(obj.transaction_name, obj.data_item)
+
+                if response:
+                    # Got all locks
+                    got_all_locks = True
+
+        if write_site_available and got_all_locks:
+            # If we have write site(s) available, and we have locks to all the relevant data items, proceed
+
+            for SDM in self.SDMs.values():
+                if SDM.site_status() and SDM.check_membership(obj.data_item):
+
+                    # Perform Write
+                    SDM.write(obj.transaction_name, obj.data_item, obj.new_value)
+
+                    # Track that this transaction touched this site.
+                    self.transaction_db[obj.transaction_name].add_touched_site(SDM.site_number)
+                    written_sites.append(SDM.site_number)
+
+                    # T1 writes x2 with value 102 to sites [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+            print(f"{obj.transaction_name} writes {obj.data_item}:{obj.new_value} to - {written_sites}")
+            return True
+
+        # Write failed.
+        return False
+
+
+    def fail(self, obj):
+        pass
+
+    def end(self, obj):
+        pass
+
+    def recover(self, obj):
+        pass
+
+    def dump(self):
+
+        print(f"----- DUMP -----")
+        for SDM in self.SDMs.values():
+            print(SDM.site_dump())
+        print(f"--- END DUMP ---")
+
     def test_for_deadlock(self):
         return True
 
@@ -116,21 +285,6 @@ class TransactionManager:
                 if operation_status:
                     # If the operation was successful then remove the event from the queue
                     self.event_queue.remove(event)
-
-    def read(self, obj):
-        return True
-
-    def write(self, obj):
-        return True
-
-    def read_from_snapshot(self, obj):
-        return True
-
-    def print_event_queue(self):
-        print(self.event_queue)
-
-    def print_transaction_db(self):
-        print(self.transaction_db)
 
     def simulation(self, instruction_queue):
         '''
@@ -171,65 +325,5 @@ class TransactionManager:
 
             self.process_event_queue()
             self.GLOBAL_TIME += 1
-
-    def begin(self, obj):
-
-        # Check if the transaction is already in the system
-        if obj.transaction in self.transaction_db:
-            raise Exception(f"Transaction {obj.transaction} already exists")
-        else:
-            # Create and start the transaction
-            transaction_obj = Transaction(obj.transaction, self.GLOBAL_TIME)
-            self.transaction_db[obj.transaction] = transaction_obj
-            print(f"Transaction {obj.transaction} starts")
-
-    def begin_ro(self, obj):
-
-        # Check if the transaction is already in the system
-        if obj.transaction in self.transaction_db:
-            raise Exception(f"Transaction {obj.transaction} already exists")
-        else:
-            # Create and start the transaction
-            transaction_obj = Transaction(obj.transaction, self.GLOBAL_TIME)
-            transaction_obj.set_read_only()
-            self.transaction_db[obj.transaction] = transaction_obj
-            print(f"[Read Only] Transaction {obj.transaction} starts")
-
-    def queue_read(self, obj):
-
-        # Check if the transaction is valid
-        if obj.transaction not in self.transaction_db:
-            raise Exception(f"Invalid Transaction {obj.transaction}")
-
-        # Queue the Read operation
-        read_obj = Read(obj.variable, obj.transaction)
-        self.event_queue.append((READ, read_obj))
-
-    def queue_write(self, obj):
-
-        # Check if the transaction is valid
-        if obj.transaction not in self.transaction_db:
-            raise Exception(f"Invalid Transaction {obj.transaction}")
-
-        write_obj = Write(obj.variable, obj.transaction, obj.new_value)
-        self.event_queue.append((WRITE, write_obj))
-
-    def fail(self, obj):
-        pass
-
-    def dump(self):
-
-        print(f"----- DUMP -----")
-        for SDM in self.SDMs.values():
-            print(SDM.site_dump())
-        print(f"--- END DUMP ---")
-
-    def end(self, obj):
-        pass
-
-    def recover(self, obj):
-        pass
-
-
 
 

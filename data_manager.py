@@ -1,4 +1,8 @@
 from constants import UP, DOWN, site_variables_init
+from collections import namedtuple
+
+# Named tuple use to return responses for Reads/Writes
+Result = namedtuple('Result', 'success value')
 
 
 class DataItem:
@@ -59,6 +63,34 @@ class SiteDataManager:
                 obj.replicated = True
 
             self.data_dict[data_item_name] = obj
+
+    def check_membership(self, variable_name):
+        '''
+        Checks if a variable exists at this site.
+        '''
+        if variable_name in self.data_dict:
+            return True
+        else:
+            return False
+
+    def site_status(self):
+        if self.status == UP:
+            return True
+        else:
+            return False
+
+    def read(self, transaction_name, data_item):
+        return Result(True, "10")
+
+    def read_snapshot(self, data_item, timestamp):
+        return Result(True, "20")
+
+    def write_lock(self, transaction_name, data_item):
+        return True
+
+    def write(self, transaction_name, data_item, new_value):
+        return
+
 
     def site_dump(self):
         output_string = "Site "
