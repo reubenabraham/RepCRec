@@ -79,6 +79,18 @@ class SiteDataManager:
         else:
             return False
 
+    def fail(self, timestamp):
+        pass
+
+    def abort(self, transaction_name):
+        pass
+
+    def recover(self, timestamp):
+        pass
+
+    def commit(self, transaction_name, timestamp):
+        pass
+
     def read(self, transaction_name, data_item):
         return Result(True, "10")
 
@@ -90,7 +102,6 @@ class SiteDataManager:
 
     def write(self, transaction_name, data_item, new_value):
         return
-
 
     def site_dump(self):
         output_string = "Site "

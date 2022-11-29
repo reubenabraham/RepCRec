@@ -33,6 +33,14 @@ class Transaction:
     def get_start_time(self):
         return self.transaction_start_time
 
+    def should_abort(self):
+        # Tells whether a transaction will abort or not
+        return self.abort
+
+    def abort(self):
+        # Aborts a transaction
+        self.abort = True
+
     def get_sites_touched(self):
         return self.transaction_accessed
 
@@ -135,7 +143,7 @@ class TransactionManager:
 
     def read(self, obj):
 
-        # Read operation for normal reads. Read object attributees below
+        # Read operation for normal reads. Read object attributes below
         # self.data_item = variable
         # self.transaction_name = transaction
 
@@ -163,7 +171,7 @@ class TransactionManager:
 
     def read_from_snapshot(self, obj):
 
-        # Read operation for Read Only transaction Reads. Read object attributees below
+        # Read operation for Read Only transaction Reads. Read object attributes below
         # self.data_item = variable
         # self.transaction_name = transaction
 
@@ -189,7 +197,7 @@ class TransactionManager:
 
     def write(self, obj):
 
-        # Write operation for Write transaction. Write object attributees below
+        # Write operation for Write transaction. Write object attributes below
         # self.data_item = variable
         # self.transaction_name = transaction
         # self.new_value = new_value
@@ -224,23 +232,81 @@ class TransactionManager:
                     self.transaction_db[obj.transaction_name].add_touched_site(SDM.site_number)
                     written_sites.append(SDM.site_number)
 
-                    # T1 writes x2 with value 102 to sites [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-
             print(f"{obj.transaction_name} writes {obj.data_item}:{obj.new_value} to - {written_sites}")
             return True
 
         # Write failed.
         return False
 
+    def end(self, obj):
+        # Transaction will either commit, or abort when end() is called.
+        # The End_IO class object is passed : self.transaction = transaction
+
+        # Check if transaction is valid.
+        if obj.transaction not in self.transaction_db:
+            raise Exception(f"Invalid Transaction {obj.transaction}")
+
+        # Check if it should abort :
+        if self.transaction_db[obj.transaction].should_abort():
+
+            # Transaction Aborts - this abort is due to site failure
+            # 1. Tell all SDMs to abort this transaction
+            for SDM in self.SDMs.values():
+                SDM.abort(obj.transaction)
+
+            # 2. Remove this transaction from transaction_db
+            del self.transaction_db[obj.transaction]
+
+            print(f"Transaction {obj.transaction} aborts: Site Failure")
+
+        else:
+
+            # Transaction can commit.
+            # 1. Tell all SDMs to commit this transaction
+            for SDM in self.SDMs.values():
+                SDM.commit(obj.transaction, self.GLOBAL_TIME)
+
+            # 2. Remove the transaction from the transaction_db
+            del self.transaction_db[obj.transaction]
+
+            print(f"Transaction {obj.transaction} commits")
 
     def fail(self, obj):
-        pass
 
-    def end(self, obj):
-        pass
+        # Site fails. Site_IO input object sent here:
+        # self.site = site
+        SDM = self.SDMs[obj.site]
+
+        # Check if the site is already down:
+        if not SDM.site_status():
+            raise Exception(f"Site {obj.site} is already down.")
+
+        # 1. Fail site
+        SDM.fail(self.GLOBAL_TIME)
+
+        # 2. Identify the transactions that will abort because the site went down, and abort those Ts
+        for transaction in self.transaction_db.values():
+            # Doesn't apply to RO
+            if transaction.check_read_only():
+                continue
+
+            sites_touched = transaction.get_sites_touched()
+            if not transaction.should_abort() and obj.site in sites_touched:
+                # This transaction will abort
+                transaction.abort()
+
+        print(f"Site {obj.site} fails")
 
     def recover(self, obj):
-        pass
+        # Site recovers
+        # Recover_IO used here has : self.site = site
+
+        SDM = self.SDMs[obj.site]
+        if SDM.site_status():
+            raise Exception(f"Site {obj.site} is still up")
+
+        SDM.recover(self.GLOBAL_TIME)
+        print(f"Site {obj.site} recovers")
 
     def dump(self):
 
