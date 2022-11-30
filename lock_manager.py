@@ -57,10 +57,15 @@ class LockManager:
             raise RuntimeError("# Cant share write locks #")
 
     def get_current_lock_type(self):
+        # Returns the type of lock currently on data item
         if not self.current_lock:
             raise RuntimeError(f"No lock currently on {self.data_item}")
         else:
             return self.current_lock.lock
+
+    def get_current_lock(self):
+        # Returns the actual lock on the data item (ReadLock or WriteLock obj)
+        return self.current_lock
 
     def clear_locks(self):
         # Clear all locks
