@@ -178,7 +178,7 @@ class SiteDataManager:
                         return Result(True, data_item.get_committed_value())
 
                     # Case 1.2 : there are queued write locks already, and a read lock cannot skip over them
-                    elif lock_manager.check_queued_write_locks(transaction_name):
+                    elif lock_manager.check_any_queued_write_locks():
                         # Add this read lock to the queue
                         lock_manager.add_to_lock_queue(QueueLock(transaction_name, var, READ))
                         return Result(False, None)
@@ -213,6 +213,58 @@ class SiteDataManager:
             # Not readable - fail
             return Result(False, None)
 
+    def test_write_lock(self, transaction_name, var):
+        '''
+        This function attempts to write-lock the data-item on
+        this site, for this transaction.
+        Return: True if it can write lock, False if it can not
+        transaction_name: "T1"
+        var: "x3"
+        '''
+
+        lock_manager: LockManager = self.lock_table[var]
+        present_lock = lock_manager.get_current_lock()
+        if present_lock:
+            # There's a lock present on this data-item
+            # Case 1: Present lock is Read Lock
+
+            if present_lock.lock == READ:
+                # Case 1.1 there are multiple transactions holding this read lock: must wait: fail
+                if len(present_lock.transaction_set) != 1:
+                    lock_manager.add_to_lock_queue(QueueLock(transaction_name, var, WRITE))
+                    return False
+
+                # Case 1.2: a single transaction holds the R lock and is same as the requesting transaction
+                elif transaction_name in present_lock.transaction_set:
+
+                    # If there are no other queued write lock requests from other transactions,
+                    # then promote to write lock
+                    if not lock_manager.check_queued_write_locks(transaction_name):
+                        return True
+                    else:
+                        # Cannot skip ahead of the other write lock reqs- wait- fail
+                        lock_manager.add_to_lock_queue(QueueLock(transaction_name, var, WRITE))
+                        return False
+
+                # Case 1.3 - another transaction holds the read lock - wait- fail
+                else:
+                    lock_manager.add_to_lock_queue(QueueLock(transaction_name, var, WRITE))
+                    return False
+
+            # Case 2: Present lock is a Write Lock
+            elif present_lock.lock == WRITE:
+                # Case 2.1  Write lock is already held by the requesting transaction: success
+                if present_lock.transaction_name == transaction_name:
+                    return True
+                # Case 2.2 Write lock is held by another transaction: must wait: fail
+                else:
+                    lock_manager.add_to_lock_queue(QueueLock(transaction_name, var, WRITE))
+                    return False
+
+        else:
+            # No lock on this variable- we can lock ourselves
+            return True
+
     def fail(self, timestamp):
         pass
 
@@ -224,9 +276,6 @@ class SiteDataManager:
 
     def commit(self, transaction_name, timestamp):
         pass
-
-    def write_lock(self, transaction_name, data_item):
-        return True
 
     def write(self, transaction_name, data_item, new_value):
         return

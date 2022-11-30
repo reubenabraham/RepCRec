@@ -206,18 +206,18 @@ class TransactionManager:
         if obj.transaction_name not in self.transaction_db:
             raise Exception(f"Invalid Transaction {obj.transaction_name}")
 
-        write_site_available, got_all_locks = False, False
+        write_site_available, got_all_locks = False, True
         written_sites = []
 
         for SDM in self.SDMs.values():
             if SDM.site_status() and SDM.check_membership(obj.data_item):
 
                 write_site_available = True
-                response = SDM.write_lock(obj.transaction_name, obj.data_item)
+                response = SDM.test_write_lock(obj.transaction_name, obj.data_item)
 
-                if response:
-                    # Got all locks
-                    got_all_locks = True
+                if not response:
+                    # Could not get one or many required w-locks
+                    got_all_locks = False
 
         if write_site_available and got_all_locks:
             # If we have write site(s) available, and we have locks to all the relevant data items, proceed

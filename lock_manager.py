@@ -120,6 +120,14 @@ class LockManager:
 
         return False
 
+    def check_any_queued_write_locks(self):
+        # Same as above function but checks if there are any queued writes - from any transaction
+        for queued_lock in self.lock_queue:
+            if queued_lock.lock == WRITE:
+                return True
+
+        return False
+
     def release_current_lock(self, transaction_name):
         # Releases the current lock held by transaction_name.
         # Since multiple read locks can be held on a variable at the same time,
