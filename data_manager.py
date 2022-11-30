@@ -323,17 +323,126 @@ class SiteDataManager:
             data_item.temp_value = DataItemTempValue(new_value, transaction_name)
             return
 
-    def fail(self, timestamp):
-        pass
-
     def abort(self, transaction_name):
-        pass
+        '''
+        * Transaction has to abort- site went down after transaction touched it
+        * Release all locks held by transaction
+        * transaction_name = "T1"
+        * return None
+        '''
 
-    def recover(self, timestamp):
-        pass
+        for lock_manager in self.lock_table.values():
+
+            lock_manager.release_current_lock(transaction_name)
+            # Check for and remove any queued locks for this transaction
+            for queued_lock in lock_manager.lock_queue:
+                if queued_lock.transaction_name == transaction_name:
+                    lock_manager.lock_queue.remove(queued_lock)
+
+        self.process_lock_queues()
+
+    def process_lock_queues(self):
+        '''
+        * Goes over the lock_queues for all the lock table members
+        and gives the lock to the member next in line.
+        * This is necessary because transactions either commit or abort
+        and when locks are freed up, they're given to next in the queue.
+        * Also, in the new lock is a READ, makes sure all the other reads in queue are shared
+        * And for the first write in queue and its the same transaction, will promote the current READ -> WL
+        '''
+
+        for data_item_name, lock_manager in self.lock_table.items():
+
+            # Only required if there are QueuedLocks in queue
+            if len(lock_manager.lock_queue) == 0:
+                continue
+            else:
+
+                present_lock = lock_manager.get_current_lock()
+                # Case 1: If there are no present locks, give it to next in queue
+                if not present_lock:
+                    next_queued_lock = lock_manager.lock_queue.pop(0)
+                    if next_queued_lock.lock == WRITE:
+                        lock_manager.set_lock(WriteLock(next_queued_lock.data_item, next_queued_lock.transaction_name))
+                    elif next_queued_lock.lock == READ:
+                        lock_manager.set_lock(ReadLock(next_queued_lock.data_item, next_queued_lock.transaction_name))
+
+                # Share all other read locks in queue with this read lock until we see a WL
+                if present_lock.lock == READ:
+
+                    for queued_lock in lock_manager.lock_queue:
+
+                        if queued_lock.lock == READ:
+                            # All read locks can be shared with read lock currently on data item
+                            lock_manager.share_lock(queued_lock.transaction_name)
+                            lock_manager.lock_queue.remove(queued_lock)
+
+                        elif queued_lock.lock == WRITE:
+                            # See if we promote current read lock to write lock
+                            # If the transaction of the currently held lock == the queued write lock
+                            if len(lock_manager.current_lock.transaction_set) == 1 and queued_lock.transaction_name in lock_manager.current_lock.transaction_set:
+                                # Promote the current Read lock to a Write lock.
+                                lock_manager.promote_lock(WriteLock(queued_lock.data_item, queued_lock.transaction_name))
+                                lock_manager.lock_queue.remove(queued_lock)
+
+                            # Since no more read locks can skip over this write in queue
+                            # break the loop
+                            break
+
+        return
 
     def commit(self, transaction_name, timestamp):
-        pass
+        '''
+        * When a transaction commits, we release all its locks and
+        commit the DataItemTempValue -> DataItemCommitValue
+        * transaction_name: "T1"
+        * timestamp:int = 3
+        * returns None
+        '''
+
+        # Step 1: release held locks
+        for lock_manager in self.lock_table.values():
+            lock_manager.release_current_lock(transaction_name)
+            for queued_lock in lock_manager.lock_queue:
+                if queued_lock.transaction_name == transaction_name:
+                    raise RuntimeError(f"{transaction_name} cannot commit with pending lock requests")
+
+        # Step 2: commit values
+        for data_item in self.data_dict.values():
+            if data_item.temp_value and transaction_name == data_item.temp_value.transaction_name:
+                data_item.set_commit_value(DataItemCommitValue(data_item.temp_value.value, timestamp))
+                data_item.can_read = True
+
+        # For any released locks, move other locks ahead
+        self.process_lock_queues()
+
+    def fail(self, timestamp):
+        '''
+        * Clear the lock table
+        * Set site to DOWN
+        * Track the time the site failed
+        '''
+
+        for lock_manager in self.lock_table.values():
+            lock_manager.clear_locks()
+
+        self.status = DOWN
+        self.fail_timestamp_list.append(timestamp)
+        return
+
+    def recover(self, timestamp):
+        '''
+        * Site recovers at time = timestamp
+        * Set site status back UP
+        * Make sure replicated variables no longer respond to any writes.
+        * Track timestamp when the site came back up.
+        '''
+        self.recover_timestamp_list.append(timestamp)
+        self.status = UP
+        for data_item in self.data_dict.values():
+            if data_item.is_replicated():
+                data_item.can_read = False
+        return
 
     def site_dump(self):
         output_string = "Site "

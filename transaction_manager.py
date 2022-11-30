@@ -383,9 +383,8 @@ class TransactionManager:
             elif operation == END:
                 self.end(obj)
             elif operation == DUMP:
-                # self.dump()
+                self.dump()
                 # this is working - just uncomment when needed
-                pass
             else:
                 raise Exception("Invalid Operation")
 
