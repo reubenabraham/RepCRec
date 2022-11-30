@@ -215,7 +215,7 @@ class SiteDataManager:
 
     def test_write_lock(self, transaction_name, var):
         '''
-        This function attempts to write-lock the data-item on
+        This function attempts to acquire a write-lock on the data-item on
         this site, for this transaction.
         Return: True if it can write lock, False if it can not
         transaction_name: "T1"
@@ -265,6 +265,64 @@ class SiteDataManager:
             # No lock on this variable- we can lock ourselves
             return True
 
+    def write(self, transaction_name, var, new_value):
+        '''
+        This function checks if locks can be acquired by calling test_write_locks()
+        and executes the Write.
+        test_write_locks has already done the validations and queued WLs, so we raise errors on
+        any path that doesn't give us WLs
+        transaction_name : "T1"
+        data_item: "x3"
+        new_value: "45"
+        None return
+        '''
+
+        data_item: DataItem = self.data_dict[var]
+        lock_manager: LockManager = self.lock_table[var]
+        present_lock = lock_manager.get_current_lock()
+
+        if present_lock:
+            # There's currently a lock on var- check what type
+            # Case 1: Read Lock
+            if present_lock.lock == READ:
+                # Case 1.1 - multiple transactions have read locks on the variable - fail
+                if len(present_lock.transaction_set) != 1:
+                    raise RuntimeError(
+                        f"Multiple transactions hold RL on {present_lock.data_item}.{self.site_number}- cant WL")
+
+                # Case 1.2: same transaction holds RL
+                elif transaction_name in present_lock.transaction_set:
+                    # Same transaction holds the RL- see if we can promote
+                    if lock_manager.check_queued_write_locks(transaction_name):
+                        raise RuntimeError(f"Other transaction WL in queue- cant promote: site:{self.site_number}")
+                    else:
+                        # promote RL -> WL
+                        lock_manager.promote_lock(WriteLock(var, transaction_name))
+
+                # Case 1.3- another transaction holds RL
+                else:
+                    # Another transaction holds the RL -
+                    raise RuntimeError(f"Another transaction holds RL- cant promote to WL: site:{self.site_number}")
+
+            # Case 2: Write Lock
+            elif present_lock.lock == WRITE:
+
+                # Case 2.1 this transaction already holds the write lock - write
+                if transaction_name == present_lock.transaction_name:
+                    data_item.temp_value = DataItemTempValue(new_value, transaction_name)
+                    return
+                else:
+                    # Another transaction holds write lock- we should not hit this code path
+                    # if test_write_lock returned True - meaning it was able to validate it can lock all items
+                    raise RuntimeError(
+                        f"Another transaction {present_lock.transaction_name} holds the WL to {present_lock.data_item}.{self.site_number}")
+
+        else:
+            # No present locks on var- set lock & set temp value for var
+            lock_manager.set_lock(WriteLock(var, transaction_name))
+            data_item.temp_value = DataItemTempValue(new_value, transaction_name)
+            return
+
     def fail(self, timestamp):
         pass
 
@@ -276,9 +334,6 @@ class SiteDataManager:
 
     def commit(self, transaction_name, timestamp):
         pass
-
-    def write(self, transaction_name, data_item, new_value):
-        return
 
     def site_dump(self):
         output_string = "Site "

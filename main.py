@@ -14,6 +14,7 @@ if __name__ == "__main__":
     tm = TransactionManager()
 
     tm.simulation(instruction_queue)
+    # Printing transactiona_db should print nothing if all transactions have endede.
     tm.print_transaction_db()
     tm.print_event_queue()
 

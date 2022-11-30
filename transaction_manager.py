@@ -327,7 +327,6 @@ class TransactionManager:
             # clean this up. remove this either when the transaction completes or when it aborts
             if obj.transaction_name not in self.transaction_db:
                 self.event_queue.remove(event)
-                print("Clean this up- should be removed elsewhere")
             else:
 
                 operation_status = False
