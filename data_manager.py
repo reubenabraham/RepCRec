@@ -453,5 +453,89 @@ class SiteDataManager:
 
         return output_string[:-2]
 
+    @staticmethod
+    def current_lock_blocks(current_lock, queued_lock):
+        '''
+        Returns True if the current lock is blocking a queued lock
+        '''
+        if current_lock.lock == WRITE:
+            if current_lock.transaction_name == queued_lock.transaction_name:
+                return False
+            else:
+                return True
+        elif current_lock.lock == READ:
+            if len(current_lock.transaction_set) == 1 and queued_lock.transaction_name in current_lock.transaction_set:
+                return False
+            elif queued_lock.lock == READ:
+                return False
+            else:
+                return True
+
+    @staticmethod
+    def queued_lock_blocks(left_queued_lock, right_queued_lock):
+        '''
+        * Returns True if a queued lock 1, ahead of queued lock 2, blocks queued lock 2
+        * Note that left_queued_lock is ahead of right_queued_lock
+        '''
+        if left_queued_lock.lock == WRITE or right_queued_lock.lock == WRITE:
+            if left_queued_lock.transaction_name == right_queued_lock.transaction_name:
+                return False
+            else:
+                return True
+        elif left_queued_lock.lock == READ and right_queued_lock.lock == READ:
+            return False
+
+    def return_waits_for_graph(self):
+        '''
+        * Returns the blocking graph for this site.
+        * There is a (possible) current_lock, and (possible) queued locks [a,b,c,d]
+        * cur_lock : [a,b,c,d]
+        * first find possible edges from a->cur_lock, b->cur_lock ...
+        * then find edges from b->a, c->a, c->b (older to newer queued lock)
+        * add both to blocking graph
+        '''
+
+        waits_graph = defaultdict(set)
+
+        for data_item, lock_manager in self.lock_table.items():
+
+            # If there are no locks in queue, check next data_item
+            if (not lock_manager.current_lock) or len(lock_manager.lock_queue) == 0:
+                continue
+
+            else:
+                # There is a lock queue for this data_item: each item in the queue is QueueLock class type
+                # Case 1: Add edges from queued locks -> current lock
+                for queued_lock in lock_manager.lock_queue:
+
+                    if self.current_lock_blocks(lock_manager.current_lock, queued_lock):
+
+                        # Case 1.1: current lock is a write lock.
+                        if lock_manager.current_lock.lock == WRITE:
+                            # Any transaction thats not the current transaction should be blocking.
+                            if lock_manager.current_lock.transaction_name != queued_lock.transaction_name:
+                                # Add edge in graph. queued lock transaction -> current lock transaction.
+                                waits_graph[queued_lock.transaction_name].add(lock_manager.current_lock.transaction_name)
+
+                        # Case 1.2: current lock is a read lock
+                        elif lock_manager.current_lock.lock == READ:
+                            # the queued lock is blocked by :
+                            # any transaction in the current_lock.transaction_set thats not itself. - since
+                            # multiple transactions can hold read lock.
+                            for cur_lock_ts in lock_manager.current_lock.transaction_set:
+                                if queued_lock.transaction_name != cur_lock_ts:
+                                    waits_graph[queued_lock.transaction_name].add(cur_lock_ts)
+
+                # Case 2: Add edges from queued locks to queued locks.
+                # For example- lock_queue = [a,b,c,d] - there could be an edge from d -> b
+                for right_ind in range(len(lock_manager.lock_queue)):
+                    for left_ind in range(right_ind):
+                        if self.queued_lock_blocks(lock_manager.lock_queue[left_ind], lock_manager.lock_queue[right_ind]):
+                            # edge from right_index_ql -> left_index_ql
+                            waits_graph[lock_manager.lock_queue[right_ind].transaction_name].add(lock_manager.lock_queue[left_ind].transaction_name)
+
+        return waits_graph
+
+
 
 
