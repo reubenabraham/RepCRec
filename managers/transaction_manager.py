@@ -8,7 +8,7 @@ the TM should try another site (all in the same step). If no relevant site is av
 '''
 import math
 
-from data_manager import SiteDataManager
+from managers.data_manager import SiteDataManager
 from constants import READ, RECOVER, WRITE, FAIL, BEGIN, BEGIN_RO, DUMP, END
 from collections import defaultdict, namedtuple
 DeadlockResult = namedtuple('DeadlockResult', 'is_deadlock transaction_name')

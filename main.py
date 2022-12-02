@@ -1,9 +1,7 @@
 import sys
-from input_processing import InputProcessor
+from parser.input_processing import InputProcessor
 
-from transaction_manager import Transaction
-from data_manager import SiteDataManager
-from transaction_manager import TransactionManager
+from managers.transaction_manager import TransactionManager
 
 if __name__ == "__main__":
 

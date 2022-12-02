@@ -1,7 +1,7 @@
 from constants import UP, DOWN, site_variables_init
 from collections import namedtuple, defaultdict, deque
 from constants import READ, WRITE
-from lock_manager import ReadLock, WriteLock, QueueLock, LockManager
+from managers.lock_manager import ReadLock, WriteLock, QueueLock, LockManager
 
 # ----- Move these named tuples to constants.py -----
 # Named tuple use to return responses for Reads/Writes

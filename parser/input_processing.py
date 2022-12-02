@@ -1,7 +1,7 @@
 from typing import List
 import os.path
 import errno
-from InputClasses import Read_IO, Write_IO, Begin_IO, BeginRO_IO, End_IO, Recover_IO, Fail_IO, Dump_IO
+from parser.InputClasses import Read_IO, Write_IO, Begin_IO, BeginRO_IO, End_IO, Recover_IO, Fail_IO, Dump_IO
 from constants import READ, RECOVER, BEGIN, BEGIN_RO, FAIL, DUMP, END, WRITE
 from collections import deque
 
