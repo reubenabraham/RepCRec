@@ -343,6 +343,7 @@ class TransactionManager:
         * Scans the waits-graph for deadlocks and returns the youngest transaction name if
         there is one
         * Return value is namedtuple type: DeadlockResult(is_deadlock:True , transaction_name:"x3")
+        * Iterative DFS used for deadlock detection
         '''
 
         youngest_transaction = None
@@ -351,10 +352,24 @@ class TransactionManager:
         # If there's no waits graph, it wont enter the next loop, the youngest_tran == None and returns false
         for start_node in list(tm_waits_graph.keys()):
             visited = set()
-            if has_cycle(start_node, start_node, visited, tm_waits_graph):
-                if self.transaction_db[start_node].transaction_start_time > youngest_transaction_time:
-                    youngest_transaction = start_node
-                    youngest_transaction_time = self.transaction_db[start_node].transaction_start_time
+            deadlock_flag = False
+            stack = [start_node]
+            while stack:
+                node = stack.pop()
+                visited.add(node)
+                for nei in tm_waits_graph[node]:
+                    if nei == start_node:
+                        deadlock_flag = True
+                        break
+                    elif nei not in visited and nei in tm_waits_graph.keys():
+                        stack.append(nei)
+
+                if deadlock_flag:
+                    break
+
+            if deadlock_flag and self.transaction_db[start_node].transaction_start_time > youngest_transaction_time:
+                youngest_transaction = start_node
+                youngest_transaction_time = self.transaction_db[start_node].transaction_start_time
 
         if youngest_transaction:
             return DeadlockResult(True, youngest_transaction)
@@ -386,8 +401,6 @@ class TransactionManager:
 
         for event in list(self.event_queue):
             operation, obj = event
-            # If the transaction is not in the transaction_db, then remove it
-            # clean this up. remove this either when the transaction completes or when it aborts
             if obj.transaction_name not in self.transaction_db:
                 self.event_queue.remove(event)
             else:
@@ -446,22 +459,8 @@ class TransactionManager:
                 self.end(obj)
             elif operation == DUMP:
                 self.dump()
-                # this is working - just uncomment when needed
             else:
                 raise Exception("Invalid Operation")
 
             self.process_event_queue()
             self.GLOBAL_TIME += 1
-
-
-def has_cycle(current, root, visited, blocking_graph):
-    """Helper function that detects cycle in blocking graph using dfs."""
-
-    visited.add(current)
-    for neighbour in blocking_graph[current]:
-        if neighbour == root:
-            return True
-        if neighbour not in visited:
-            if has_cycle(neighbour, root, visited, blocking_graph):
-                return True
-    return False
