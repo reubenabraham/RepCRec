@@ -1,0 +1,38 @@
+Instruction Queue: 
+deque([('begin', begin(T5)), ('begin', begin(T4)), ('begin', begin(T3)), ('begin', begin(T2)), ('begin', begin(T1)), ('W', W(T1,x4,5)), ('fail', fail(2)), ('W', W(T2,x4,44)), ('recover', recover(2)), ('W', W(T3,x4,55)), ('W', W(T4,x4,66)), ('W', W(T5,x4,77)), ('end', end(T1)), ('end', end(T2)), ('end', end(T3)), ('end', end(T4)), ('end', end(T5))])
+
+Execution:
+-------- time:0 --------
+Transaction T5 starts
+-------- time:1 --------
+Transaction T4 starts
+-------- time:2 --------
+Transaction T3 starts
+-------- time:3 --------
+Transaction T2 starts
+-------- time:4 --------
+Transaction T1 starts
+-------- time:5 --------
+T1 writes x4:5 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:6 --------
+Site 2 fails
+-------- time:7 --------
+-------- time:8 --------
+Site 2 recovers
+-------- time:9 --------
+-------- time:10 --------
+-------- time:11 --------
+-------- time:12 --------
+Transaction T1 aborts: Site Failure
+T2 writes x4:44 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:13 --------
+Transaction T2 commits
+T3 writes x4:55 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:14 --------
+Transaction T3 commits
+T4 writes x4:66 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:15 --------
+Transaction T4 commits
+T5 writes x4:77 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:16 --------
+Transaction T5 commits

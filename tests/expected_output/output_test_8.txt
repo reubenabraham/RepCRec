@@ -1,0 +1,26 @@
+Instruction Queue: 
+deque([('begin', begin(T1)), ('beginRO', beginRO(T2)), ('R', R(T2,x1)), ('R', R(T2,x2)), ('W', W(T1,x3,33)), ('end', end(T1)), ('beginRO', beginRO(T3)), ('R', R(T3,x3)), ('R', R(T2,x3)), ('end', end(T2)), ('end', end(T3))])
+
+Execution:
+-------- time:0 --------
+Transaction T1 starts
+-------- time:1 --------
+Transaction T2 [Read Only] starts
+-------- time:2 --------
+T2 [Read-Only] reads x1.2 : 10
+-------- time:3 --------
+T2 [Read-Only] reads x2.1 : 20
+-------- time:4 --------
+T1 writes x3:33 to - ['4']
+-------- time:5 --------
+Transaction T1 commits
+-------- time:6 --------
+Transaction T3 [Read Only] starts
+-------- time:7 --------
+T3 [Read-Only] reads x3.4 : 33
+-------- time:8 --------
+T2 [Read-Only] reads x3.4 : 30
+-------- time:9 --------
+Transaction T2 commits
+-------- time:10 --------
+Transaction T3 commits

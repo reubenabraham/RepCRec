@@ -1,4 +1,7 @@
 venv/
 .idea/
 tests/.DS_Store
+tests/generated_output/
 __pycache__/
+./.pytest_cache
+.DS_Store

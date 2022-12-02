@@ -1,0 +1,22 @@
+Instruction Queue: 
+deque([('begin', begin(T1)), ('begin', begin(T2)), ('begin', begin(T3)), ('W', W(T3,x2,10)), ('W', W(T2,x2,10)), ('W', W(T1,x2,10)), ('end', end(T3)), ('end', end(T2)), ('end', end(T1))])
+
+Execution:
+-------- time:0 --------
+Transaction T1 starts
+-------- time:1 --------
+Transaction T2 starts
+-------- time:2 --------
+Transaction T3 starts
+-------- time:3 --------
+T3 writes x2:10 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:4 --------
+-------- time:5 --------
+-------- time:6 --------
+Transaction T3 commits
+T2 writes x2:10 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:7 --------
+Transaction T2 commits
+T1 writes x2:10 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:8 --------
+Transaction T1 commits

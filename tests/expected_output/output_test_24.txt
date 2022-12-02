@@ -1,0 +1,20 @@
+Instruction Queue: 
+deque([('begin', begin(T1)), ('R', R(T1,x2)), ('fail', fail(2)), ('beginRO', beginRO(T2)), ('recover', recover(2)), ('R', R(T2,x1)), ('end', end(T2)), ('end', end(T1))])
+
+Execution:
+-------- time:0 --------
+Transaction T1 starts
+-------- time:1 --------
+T1 reads x2.1 : 20
+-------- time:2 --------
+Site 2 fails
+-------- time:3 --------
+Transaction T2 [Read Only] starts
+-------- time:4 --------
+Site 2 recovers
+-------- time:5 --------
+T2 [Read-Only] reads x1.2 : 10
+-------- time:6 --------
+Transaction T2 commits
+-------- time:7 --------
+Transaction T1 commits

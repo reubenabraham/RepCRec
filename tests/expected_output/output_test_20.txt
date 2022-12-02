@@ -1,0 +1,50 @@
+Instruction Queue: 
+deque([('begin', begin(T1)), ('begin', begin(T2)), ('W', W(T1,x2,9)), ('fail', fail(1)), ('end', end(T1)), ('begin', begin(T3)), ('W', W(T3,x2,100)), ('end', end(T3)), ('recover', recover(1)), ('fail', fail(2)), ('fail', fail(3)), ('fail', fail(4)), ('fail', fail(5)), ('fail', fail(6)), ('fail', fail(7)), ('fail', fail(8)), ('fail', fail(9)), ('fail', fail(10)), ('R', R(T2,x2)), ('begin', begin(T5)), ('W', W(T5,x2,90)), ('end', end(T5)), ('end', end(T2))])
+
+Execution:
+-------- time:0 --------
+Transaction T1 starts
+-------- time:1 --------
+Transaction T2 starts
+-------- time:2 --------
+T1 writes x2:9 to - ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:3 --------
+Site 1 fails
+-------- time:4 --------
+Transaction T1 aborts: Site Failure
+-------- time:5 --------
+Transaction T3 starts
+-------- time:6 --------
+T3 writes x2:100 to - ['2', '3', '4', '5', '6', '7', '8', '9', '10']
+-------- time:7 --------
+Transaction T3 commits
+-------- time:8 --------
+Site 1 recovers
+-------- time:9 --------
+Site 2 fails
+-------- time:10 --------
+Site 3 fails
+-------- time:11 --------
+Site 4 fails
+-------- time:12 --------
+Site 5 fails
+-------- time:13 --------
+Site 6 fails
+-------- time:14 --------
+Site 7 fails
+-------- time:15 --------
+Site 8 fails
+-------- time:16 --------
+Site 9 fails
+-------- time:17 --------
+Site 10 fails
+-------- time:18 --------
+-------- time:19 --------
+Transaction T5 starts
+-------- time:20 --------
+T5 writes x2:90 to - ['1']
+-------- time:21 --------
+Transaction T5 commits
+T2 reads x2.1 : 90
+-------- time:22 --------
+Transaction T2 commits

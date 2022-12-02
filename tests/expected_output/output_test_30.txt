@@ -1,0 +1,44 @@
+Instruction Queue: 
+deque([('fail', fail(2)), ('fail', fail(3)), ('fail', fail(4)), ('fail', fail(5)), ('fail', fail(6)), ('fail', fail(7)), ('fail', fail(8)), ('fail', fail(9)), ('fail', fail(10)), ('begin', begin(T1)), ('W', W(T1,x2,100)), ('end', end(T1)), ('recover', recover(2)), ('fail', fail(1)), ('beginRO', beginRO(T2)), ('begin', begin(T3)), ('W', W(T3,x2,200)), ('end', end(T3)), ('R', R(T2,x2)), ('end', end(T2))])
+
+Execution:
+-------- time:0 --------
+Site 2 fails
+-------- time:1 --------
+Site 3 fails
+-------- time:2 --------
+Site 4 fails
+-------- time:3 --------
+Site 5 fails
+-------- time:4 --------
+Site 6 fails
+-------- time:5 --------
+Site 7 fails
+-------- time:6 --------
+Site 8 fails
+-------- time:7 --------
+Site 9 fails
+-------- time:8 --------
+Site 10 fails
+-------- time:9 --------
+Transaction T1 starts
+-------- time:10 --------
+T1 writes x2:100 to - ['1']
+-------- time:11 --------
+Transaction T1 commits
+-------- time:12 --------
+Site 2 recovers
+-------- time:13 --------
+Site 1 fails
+-------- time:14 --------
+Transaction T2 [Read Only] starts
+-------- time:15 --------
+Transaction T3 starts
+-------- time:16 --------
+T3 writes x2:200 to - ['2']
+-------- time:17 --------
+Transaction T3 commits
+-------- time:18 --------
+T2 [Read-Only] reads x2.2 : 20
+-------- time:19 --------
+Transaction T2 commits
