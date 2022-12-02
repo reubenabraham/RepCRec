@@ -1,14 +1,6 @@
-from constants import UP, DOWN, site_variables_init
-from collections import namedtuple, defaultdict, deque
-from constants import READ, WRITE
+from collections import defaultdict, deque
+from constants import UP, DOWN, site_variables_init, READ, WRITE, Result, DataItemCommitValue, DataItemTempValue
 from managers.lock_manager import ReadLock, WriteLock, QueueLock, LockManager
-
-# ----- Move these named tuples to constants.py -----
-# Named tuple use to return responses for Reads/Writes
-Result = namedtuple('Result', 'success value')
-DataItemCommitValue = namedtuple('DataItemCommitValue', 'value commit_timestamp')
-DataItemTempValue = namedtuple('DataItemTempValue', 'value transaction_name')
-OperationResult = namedtuple('OperationResult', 'success value')
 
 
 class DataItem:

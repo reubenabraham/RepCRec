@@ -1,4 +1,5 @@
-# Input Operations Constants
+from collections import namedtuple
+
 READ = "R"
 WRITE = "W"
 BEGIN = "begin"
@@ -23,3 +24,9 @@ site_variables_init = {
     "10": [2, 4, 6, 8, 9, 10, 12, 14, 16, 18, 19, 20],
 }
 
+# Namedtuples :
+DeadlockResult = namedtuple('DeadlockResult', 'is_deadlock transaction_name')
+Result = namedtuple('Result', 'success value')
+DataItemCommitValue = namedtuple('DataItemCommitValue', 'value commit_timestamp')
+DataItemTempValue = namedtuple('DataItemTempValue', 'value transaction_name')
+OperationResult = namedtuple('OperationResult', 'success value')
