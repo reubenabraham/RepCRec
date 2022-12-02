@@ -6,8 +6,12 @@ the TM should try another site (all in the same step). If no relevant site is av
 * As mentioned above, if every site failed after a commit to x but before T began, then the read-only transaction should abort.
 
 '''
+import math
+
 from data_manager import SiteDataManager
 from constants import READ, RECOVER, WRITE, FAIL, BEGIN, BEGIN_RO, DUMP, END
+from collections import defaultdict, namedtuple
+DeadlockResult = namedtuple('DeadlockResult', 'is_deadlock transaction_name')
 
 
 class Transaction:
@@ -37,7 +41,7 @@ class Transaction:
         # Tells whether a transaction will abort or not
         return self.abort
 
-    def abort(self):
+    def abort_transaction(self):
         # Aborts a transaction
         self.abort = True
 
@@ -211,7 +215,6 @@ class TransactionManager:
 
         for SDM in self.SDMs.values():
             if SDM.site_status() and SDM.check_membership(obj.data_item):
-
                 write_site_available = True
                 response = SDM.test_write_lock(obj.transaction_name, obj.data_item)
 
@@ -293,7 +296,7 @@ class TransactionManager:
             sites_touched = transaction.get_sites_touched()
             if not transaction.should_abort() and obj.site in sites_touched:
                 # This transaction will abort
-                transaction.abort()
+                transaction.abort_transaction()
 
         print(f"Site {obj.site} fails")
 
@@ -309,26 +312,87 @@ class TransactionManager:
         print(f"Site {obj.site} recovers")
 
     def dump(self):
-
-        print(f"----- DUMP -----")
         for SDM in self.SDMs.values():
             print(SDM.site_dump())
-        print(f"--- END DUMP ---")
+
+    def generate_tm_waits_graph(self):
+        # Combine the waits-for graphs from all sites into one
+        tm_waits_graph = defaultdict(set)
+        for SDM in self.SDMs.values():
+            if SDM.site_status():
+                wait_graph = SDM.return_waits_for_graph()
+                for start, end_set in wait_graph.items():
+                    # Add all edges into full waits-graph
+                    tm_waits_graph[start].update(end_set)
+
+        return tm_waits_graph
+
+    def abort_deadlocked_transaction(self, transaction_name):
+        '''
+        * A deadlock has occured and this transaction name has been picked to kill
+        '''
+
+        # Abort this transaction at all sites.
+        for SDM in self.SDMs.values():
+            SDM.abort(transaction_name)
+
+        # Remove transaction from transaction_db
+        del self.transaction_db[transaction_name]
+        print(f"Transaction {transaction_name} aborted to resolve deadlock")
+
+    def deadlock_graph_check(self, tm_waits_graph):
+        '''
+        * Scans the waits-graph for deadlocks and returns the youngest transaction name if
+        there is one
+        * Return value is namedtuple type: DeadlockResult(is_deadlock:True , transaction_name:"x3")
+        '''
+
+        youngest_transaction = None
+        youngest_transaction_time = -math.inf
+
+        # If there's no waits graph, it wont enter the next loop, the youngest_tran == None and returns false
+        for start_node in list(tm_waits_graph.keys()):
+            visited = set()
+            if has_cycle(start_node, start_node, visited, tm_waits_graph):
+                if self.transaction_db[start_node].transaction_start_time > youngest_transaction_time:
+                    youngest_transaction = start_node
+                    youngest_transaction_time = self.transaction_db[start_node].transaction_start_time
+
+        if youngest_transaction:
+            return DeadlockResult(True, youngest_transaction)
+        else:
+            return DeadlockResult(False, None)
 
     def test_for_deadlock(self):
-        return True
+        '''
+        * Combines the waits-graph from all sites into 1 graph.
+        * Checks this graph for deadlocks.
+        * If a deadlock is found, the youngest transaction is aborted.
+        * returns True if it finds a deadlock.
+        '''
+
+        tm_waits_graph = self.generate_tm_waits_graph()
+        test_result = self.deadlock_graph_check(tm_waits_graph)
+        if not test_result.is_deadlock:
+            return False
+        else:
+            # Deadlock detected.
+            print("# Deadlock Detected #")
+            self.abort_deadlocked_transaction(test_result.transaction_name)
+            return True
 
     def process_event_queue(self):
+        '''
+        The event-queue consists of queued read and write requests.
+        '''
 
-        for event in self.event_queue:
+        for event in list(self.event_queue):
             operation, obj = event
-
             # If the transaction is not in the transaction_db, then remove it
             # clean this up. remove this either when the transaction completes or when it aborts
             if obj.transaction_name not in self.transaction_db:
                 self.event_queue.remove(event)
             else:
-
                 operation_status = False
                 if operation == READ:
 
@@ -392,3 +456,14 @@ class TransactionManager:
             self.GLOBAL_TIME += 1
 
 
+def has_cycle(current, root, visited, blocking_graph):
+    """Helper function that detects cycle in blocking graph using dfs."""
+
+    visited.add(current)
+    for neighbour in blocking_graph[current]:
+        if neighbour == root:
+            return True
+        if neighbour not in visited:
+            if has_cycle(neighbour, root, visited, blocking_graph):
+                return True
+    return False

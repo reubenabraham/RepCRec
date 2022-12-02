@@ -31,7 +31,7 @@ class DataItem:
         self.can_read = True
 
     def __repr__(self):
-        return self.name+f"= {list(self.get_committed_value())}"
+        return self.name+f"= {self.get_committed_value()}"
 
     def readable(self):
         # Determines if a data item is readable. Replicated variables cannot be read at
@@ -335,7 +335,7 @@ class SiteDataManager:
 
             lock_manager.release_current_lock(transaction_name)
             # Check for and remove any queued locks for this transaction
-            for queued_lock in lock_manager.lock_queue:
+            for queued_lock in list(lock_manager.lock_queue):
                 if queued_lock.transaction_name == transaction_name:
                     lock_manager.lock_queue.remove(queued_lock)
 
@@ -357,7 +357,6 @@ class SiteDataManager:
             if len(lock_manager.lock_queue) == 0:
                 continue
             else:
-
                 present_lock = lock_manager.get_current_lock()
                 # Case 1: If there are no present locks, give it to next in queue
                 if not present_lock:
@@ -367,10 +366,12 @@ class SiteDataManager:
                     elif next_queued_lock.lock == READ:
                         lock_manager.set_lock(ReadLock(next_queued_lock.data_item, next_queued_lock.transaction_name))
 
+                # A new present lock might have been set from the above statements
+                present_lock = lock_manager.get_current_lock()
                 # Share all other read locks in queue with this read lock until we see a WL
                 if present_lock.lock == READ:
 
-                    for queued_lock in lock_manager.lock_queue:
+                    for queued_lock in list(lock_manager.lock_queue):
 
                         if queued_lock.lock == READ:
                             # All read locks can be shared with read lock currently on data item
@@ -403,7 +404,7 @@ class SiteDataManager:
         # Step 1: release held locks
         for lock_manager in self.lock_table.values():
             lock_manager.release_current_lock(transaction_name)
-            for queued_lock in lock_manager.lock_queue:
+            for queued_lock in list(lock_manager.lock_queue):
                 if queued_lock.transaction_name == transaction_name:
                     raise RuntimeError(f"{transaction_name} cannot commit with pending lock requests")
 
@@ -445,9 +446,10 @@ class SiteDataManager:
         return
 
     def site_dump(self):
-        output_string = "Site "
+        output_string = f"Status:{'UP' if self.status else 'DOWN'}: "
+        output_string += "site "
         output_string += self.site_number
-        output_string += ": "+f"Status:[{'UP' if self.status else 'DOWN'}]"+" - "
+        output_string += "- "
         for data_item in self.data_dict.values():
             output_string += data_item.name+":"+data_item.get_committed_value()+", "
 

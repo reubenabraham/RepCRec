@@ -34,7 +34,9 @@ class InputProcessor:
         '''
         Converts '(a,b,c)' -> tuple(a,b,c)
         '''
-        return tuple(x for x in s[1:-1].split(','))
+        # Remove all spaces in the tuple string
+        st = s[1:-1].replace(" ", "")
+        return tuple(x for x in st.split(','))
 
     @staticmethod
     def validate_tuple_length(tup, expected_size, line_count, line):

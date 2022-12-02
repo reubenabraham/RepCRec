@@ -9,12 +9,10 @@ if __name__ == "__main__":
 
     input_processor = InputProcessor(len(sys.argv), sys.argv)
     instruction_queue = input_processor.create_instruction_queue()
+    print("Instruction Queue: ")
     print(instruction_queue)
+    print("\nExecution:")
 
     tm = TransactionManager()
-
     tm.simulation(instruction_queue)
-    # Printing transactiona_db should print nothing if all transactions have endede.
-    tm.print_transaction_db()
-    tm.print_event_queue()
 
