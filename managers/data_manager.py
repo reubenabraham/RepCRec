@@ -259,8 +259,6 @@ class SiteDataManager:
 
     def write(self, transaction_name, var, new_value):
         '''
-        This function checks if locks can be acquired by calling test_write_locks()
-        and executes the Write.
         test_write_locks has already done the validations and queued WLs, so we raise errors on
         any path that doesn't give us WLs
         transaction_name : "T1"

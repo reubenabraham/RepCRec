@@ -1,10 +1,6 @@
 '''
 * Transaction Manager never fails
 * SDM tracks the up/down of its site, and TM contains all SDMs
-* If the TM requests a read on a replicated data item x for read-write transaction T and cannot get it due to failure,
-the TM should try another site (all in the same step). If no relevant site is available, then T must wait.
-* As mentioned above, if every site failed after a commit to x but before T began, then the read-only transaction should abort.
-
 '''
 import math
 from managers.data_manager import SiteDataManager
@@ -145,7 +141,8 @@ class TransactionManager:
 
     def read(self, obj):
 
-        # Read operation for normal reads. Read object attributes below
+        # Read operation for normal reads.
+        # Read object attributes below
         # self.data_item = variable
         # self.transaction_name = transaction
 
@@ -173,7 +170,8 @@ class TransactionManager:
 
     def read_from_snapshot(self, obj):
 
-        # Read operation for Read Only transaction Reads. Read object attributes below
+        # Read operation for Read Only transaction Reads.
+        # Read object attributes below
         # self.data_item = variable
         # self.transaction_name = transaction
 
@@ -396,7 +394,7 @@ class TransactionManager:
 
     def process_event_queue(self):
         '''
-        The event-queue consists of queued read and write requests.
+        The event-queue consists of queued read(only) and write requests.
         '''
 
         for event in list(self.event_queue):

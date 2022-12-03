@@ -1,6 +1,5 @@
 import sys
 from parser.input_processing import InputProcessor
-
 from managers.transaction_manager import TransactionManager
 
 if __name__ == "__main__":
