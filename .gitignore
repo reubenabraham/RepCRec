@@ -2,6 +2,8 @@ venv/
 .idea/
 tests/.DS_Store
 tests/generated_output/
+tests/generated_output_shell_script/
 **/__pycache__/
 ./.pytest_cache
 .DS_Store
+diff_log.txt
