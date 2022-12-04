@@ -1,4 +1,4 @@
-# RepCRec
+# Replicated Concurrency Control and Recovery (RepCRec)
 
 ## Overview
 - This project is an implementation of a distributed database system with deadlock detection, replication, and failure recovery. 
