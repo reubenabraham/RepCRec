@@ -13,13 +13,15 @@ testcases = sorted(os.listdir(testcase_dir))
 
 
 def get_compare_list():
-    expected_results = [expected_out_dir + f_name for f_name in sorted(os.listdir(expected_out_dir))]
-    generated_results = [program_output_dir + f_name for f_name in sorted(os.listdir(program_output_dir))]
-    res_list = []
-    for i, j in zip(expected_results, generated_results):
-        res_list.append((i, j))
 
-    return res_list
+    if os.path.exists(program_output_dir):
+        expected_results = [expected_out_dir + f_name for f_name in sorted(os.listdir(expected_out_dir))]
+        generated_results = [program_output_dir + f_name for f_name in sorted(os.listdir(program_output_dir))]
+        res_list = []
+        for i, j in zip(expected_results, generated_results):
+            res_list.append((i, j))
+
+        return res_list
 
 
 COMPARE_LIST = get_compare_list()
