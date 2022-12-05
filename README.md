@@ -10,6 +10,33 @@
 
 ![](readme_project_structure.png)
 
+### Running the Project 
+
+**Option 1**: reprozip - look at reprozip_README.txt to run this project via reprozip.
+
+**Option 2:** Clone + Local run - 
+- `git clone` this repository onto your machine, and `cd` into the root directory.
+- Option 2.1 : run.sh - running the command `./run.sh` will run the shell script that executes `main.py` for each testcase in `tests/testcases`, compare its output with the expected output of the corresponding test, and send any differences to `diff_log.txt`.
+- Option 2.2 : pytest - does the same as above with pytest :
+    * Ensure you have venv installed on system python: `pip install virtualenv`
+    * From root, create a virtualenv : `python3 -m venv env`
+    * Activate environment : `source env/bin/activate`
+    * Install requirements : `pip install -r requirements.txt`
+    * Run test_program so it creates program output : `python3 test_program.py`
+    * Run pytest from root : `pytest` 
+- Option 2.3 : To simply run a test file of your own - 
+    * Modify the testfile in `sandbox/test_input.txt` with your desired testcase.
+    * From root, run `python3 main.py sandbox/test_input.txt` - output goes to stdout.
+
+**Option 3:** Clone + Docker run - 
+- `git clone` this repository onto your machine, and `cd` into the root directory.
+- From root, `docker build -t repcrec .` - this installs requirements as well.
+- To run a specific testcase: `docker run repcrec python /src/main.py src/tests/testcases/test_1.txt`
+  
+- **Note**: For both option 2.1 and option 2.2, if any changes are made to the output structure of the program, the `tests/expected_output`
+folder will need to be regenerated with the new output format before we can run `run.sh` or `pytest`. Similarly, to add a test to the automated test suite, first use option 2.3 to ensure your test is producing a logically correct output. Then add your test's output to the `tests/expected_output` folder, modify the shell script's loop to run for the new number of total testcases, and now you can proceed with instructions for 2.1 & 2.2.
+
+  
 ### Available Copies Algorithm
 
 - Read from one copy, but write to all copies.  
