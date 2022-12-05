@@ -33,7 +33,8 @@
 - From root, `docker build -t repcrec .` - this installs requirements as well.
 - To run a specific testcase: `docker run repcrec python /src/main.py src/tests/testcases/test_1.txt`
   
-- **Note**: For both option 2.1 and option 2.2, if any changes are made to the output structure of the program, the `tests/expected_output`
+
+**Note**: For both option 2.1 and option 2.2, if any changes are made to the output structure of the program, the `tests/expected_output`
 folder will need to be regenerated with the new output format before we can run `run.sh` or `pytest`. Similarly, to add a test to the automated test suite, first use option 2.3 to ensure your test is producing a logically correct output. Then add your test's output to the `tests/expected_output` folder, modify the shell script's loop to run for the new number of total testcases, and now you can proceed with instructions for 2.1 & 2.2.
 
   
